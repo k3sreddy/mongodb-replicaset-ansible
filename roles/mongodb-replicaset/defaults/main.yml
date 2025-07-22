@@ -1,0 +1,11 @@
+---
+# Default variables for MongoDB replica set configuration
+
+# Replica set initialization timeout
+mongodb_rs_init_timeout: 120
+mongodb_rs_status_timeout: 60
+
+# Admin user creation
+mongodb_create_admin_user: true
+mongodb_admin_roles:
+  - "root"

@@ -1,0 +1,20 @@
+---
+# Host specific variables for mongodb2 (Primary node)
+
+# Node identification
+mongodb_node_id: 1
+mongodb_node_role: "primary"
+mongodb_priority: 2  # Higher priority for primary
+mongodb_votes: 1
+
+# Host specific SSL configuration
+mongodb_ssl_hostname: "mongodb2"
+mongodb_ssl_ip: "172.16.90.164"
+
+# Host specific resource allocation
+mongodb_cache_size_gb: 2  # More resources for primary
+mongodb_oplog_size_mb: 2048
+
+# Backup configuration (primary handles backups)
+mongodb_backup_enabled: true
+mongodb_backup_schedule: "0 2 * * *"  # 2 AM daily

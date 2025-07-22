@@ -1,0 +1,108 @@
+---
+# MongoDB installation tasks
+
+- name: Add MongoDB repository key
+  rpm_key:
+    key: "{{ mongodb_gpg_key }}"
+    state: present
+  tags: repo
+
+- name: Add MongoDB repository
+  yum_repository:
+    name: "{{ mongodb_repo_filename }}"
+    description: "MongoDB Repository"
+    baseurl: "{{ mongodb_repository_url }}"
+    gpgcheck: true
+    enabled: true
+    gpgkey: "{{ mongodb_gpg_key }}"
+  tags: repo
+
+- name: Install MongoDB packages
+  package:
+    name:
+      - "{{ mongodb_package }}"
+      - "{{ mongodb_package }}-server"
+      - "{{ mongodb_package }}-shell"
+      - "{{ mongodb_package }}-mongos"
+      - "{{ mongodb_package }}-tools"
+    state: "{{ package_state }}"
+  tags: install
+
+- name: Install MongoDB shell for OpenSSL 3 compatibility
+  package:
+    name: mongodb-mongosh-shared-openssl3
+    state: "{{ package_state }}"
+  ignore_errors: true
+  tags: install
+
+- name: Generate MongoDB keyfile
+  template:
+    src: keyfile.j2
+    dest: "{{ mongodb_keyfile_path }}"
+    owner: "{{ mongodb_user }}"
+    group: "{{ mongodb_group }}"
+    mode: '0400'
+  tags: keyfile
+
+- name: Generate MongoDB configuration file
+  template:
+    src: "{{ mongodb_config_template }}"
+    dest: "{{ mongodb_config_file }}"
+    owner: "{{ mongodb_user }}"
+    group: "{{ mongodb_group }}"
+    mode: '0644'
+    backup: true
+  notify: restart mongod
+  tags: config
+
+- name: Create systemd override directory for MongoDB
+  file:
+    path: /etc/systemd/system/mongod.service.d
+    state: directory
+    mode: '0755'
+  tags: systemd
+
+- name: Create systemd override for MongoDB service limits
+  copy:
+    content: |
+      [Service]
+      # Recommended ulimit settings for MongoDB
+      LimitFSIZE=infinity
+      LimitCPU=infinity
+      LimitAS=infinity
+      LimitNOFILE=64000
+      LimitNPROC=64000
+      LimitMEMLOCK=infinity
+      TasksMax=infinity
+      TasksAccounting=false
+    dest: /etc/systemd/system/mongod.service.d/limits.conf
+    mode: '0644'
+  notify: restart mongod
+  tags: systemd
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+  tags: systemd
+
+- name: Start and enable MongoDB service
+  systemd:
+    name: "{{ mongodb_service_name }}"
+    state: "{{ service_state }}"
+    enabled: "{{ service_enabled }}"
+  tags: service
+
+- name: Wait for MongoDB to start
+  wait_for:
+    port: "{{ mongodb_port }}"
+    host: "127.0.0.1"
+    delay: 5
+    timeout: 60
+  tags: service
+
+- name: Verify MongoDB is running
+  command: pgrep mongod
+  register: mongodb_process
+  changed_when: false
+  failed_when: mongodb_process.rc != 0
+  tags: verify

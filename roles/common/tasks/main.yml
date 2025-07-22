@@ -1,0 +1,118 @@
+---
+# Common tasks for all MongoDB hosts
+# System preparation and basic configuration
+
+- name: Set system hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+  tags: hostname
+
+- name: Update /etc/hosts with all MongoDB nodes
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[item]['ansible_host'] }} {{ item }}"
+    state: present
+  loop: "{{ groups['mongodb'] }}"
+  tags: hosts
+
+- name: Set timezone
+  timezone:
+    name: "{{ system_timezone }}"
+  tags: timezone
+
+- name: Install required system packages
+  package:
+    name:
+      - openssl
+      - openssl-devel
+      - wget
+      - curl
+      - vim
+      - htop
+      - net-tools
+      - firewalld
+      - python3
+      - python3-pip
+    state: present
+  tags: packages
+
+- name: Install Python MongoDB modules
+  pip:
+    name:
+      - pymongo
+      - dnspython
+    state: present
+  tags: python-deps
+
+- name: Configure system limits for MongoDB
+  pam_limits:
+    domain: "{{ item.domain }}"
+    limit_type: "{{ item.limit_type }}"
+    limit_item: "{{ item.limit_item }}"
+    value: "{{ item.value }}"
+  loop: "{{ mongodb_system_limits }}"
+  notify: restart mongod
+  tags: limits
+
+- name: Create MongoDB system user
+  user:
+    name: "{{ mongodb_user }}"
+    group: "{{ mongodb_group }}"
+    system: true
+    shell: /bin/false
+    home: "{{ mongodb_data_dir }}"
+    createhome: false
+  tags: user
+
+- name: Create MongoDB directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ mongodb_user }}"
+    group: "{{ mongodb_group }}"
+    mode: '0750'
+  loop:
+    - "{{ mongodb_data_dir }}"
+    - "{{ mongodb_log_dir }}"
+    - "/var/run/mongodb"
+    - "/opt/mongodb"
+    - "{{ mongodb_ssl_cert_dir }}"
+  tags: directories
+
+- name: Configure firewall for MongoDB
+  firewalld:
+    port: "{{ mongodb_port }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: true
+  when: enable_firewall and firewall_service == "firewalld"
+  tags: firewall
+
+- name: Configure firewall sources for MongoDB
+  firewalld:
+    source: "{{ item }}"
+    port: "{{ mongodb_port }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop: "{{ allowed_ips }}"
+  when: enable_firewall and firewall_service == "firewalld"
+  tags: firewall
+
+- name: Disable SELinux (temporary for MongoDB setup)
+  selinux:
+    state: permissive
+  tags: selinux
+
+- name: Install NTP for time synchronization
+  package:
+    name: chrony
+    state: present
+  tags: ntp
+
+- name: Start and enable chronyd
+  systemd:
+    name: chronyd
+    state: started
+    enabled: true
+  tags: ntp

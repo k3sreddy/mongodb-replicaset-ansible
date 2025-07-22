@@ -1,0 +1,21 @@
+---
+# Common handlers
+
+- name: restart mongod
+  systemd:
+    name: mongod
+    state: restarted
+    daemon_reload: true
+  listen: "restart mongod"
+
+- name: reload firewalld
+  systemd:
+    name: firewalld
+    state: reloaded
+  listen: "reload firewalld"
+
+- name: restart chronyd
+  systemd:
+    name: chronyd
+    state: restarted
+  listen: "restart chronyd"

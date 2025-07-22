@@ -1,0 +1,138 @@
+---
+# MongoDB replica set configuration tasks
+
+- name: Wait for MongoDB to be ready on all nodes
+  wait_for:
+    port: "{{ mongodb_port }}"
+    host: "{{ ansible_default_ipv4.address }}"
+    delay: 10
+    timeout: 60
+  tags: wait
+
+- name: Check if replica set is already initialized
+  community.mongodb.mongodb_shell:
+    eval: "rs.status()"
+    mongo_cmd: "mongosh"
+  register: rs_status_check
+  failed_when: false
+  run_once: true
+  delegate_to: "{{ groups['mongodb'][0] }}"
+  tags: check
+
+- name: Initialize replica set (run once on primary)
+  community.mongodb.mongodb_replicaset:
+    replica_set: "{{ mongodb_replica_set_name }}"
+    members: "{{ mongodb_replica_set_members | map(attribute='host') | list }}"
+    validate: false
+    mongo_cmd: "mongosh"
+  when: 
+    - rs_status_check.rc != 0
+    - inventory_hostname == groups['mongodb'][0]
+  register: rs_init_result
+  run_once: true
+  tags: init
+
+- name: Wait for replica set to stabilize after initialization
+  pause:
+    seconds: 30
+  when: rs_init_result is changed
+  tags: wait
+
+- name: Wait for primary election
+  community.mongodb.mongodb_shell:
+    eval: |
+      var status = rs.status();
+      var primary = status.members.find(m => m.stateStr === 'PRIMARY');
+      if (!primary) {
+        throw new Error('No primary found');
+      }
+      print('Primary: ' + primary.name);
+    mongo_cmd: "mongosh"
+  register: primary_check
+  retries: 12
+  delay: 10
+  until: primary_check.rc == 0
+  run_once: true
+  delegate_to: "{{ groups['mongodb'][0] }}"
+  tags: wait
+
+- name: Configure replica set member priorities
+  community.mongodb.mongodb_shell:
+    eval: |
+      var config = rs.conf();
+      {% for member in mongodb_replica_set_members %}
+      {% set member_index = loop.index0 %}
+      config.members[{{ member_index }}].priority = {{ member.priority }};
+      config.members[{{ member_index }}].votes = {{ member.votes }};
+      {% endfor %}
+      config.version++;
+      rs.reconfig(config);
+    mongo_cmd: "mongosh"
+  when: 
+    - inventory_hostname == groups['mongodb'][0]
+    - rs_init_result is changed
+  run_once: true
+  register: rs_reconfig
+  tags: priority
+
+- name: Wait for replica set reconfiguration
+  pause:
+    seconds: 20
+  when: rs_reconfig is changed
+  tags: wait
+
+- name: Create MongoDB admin user (on primary only)
+  community.mongodb.mongodb_user:
+    database: "{{ mongodb_admin_database }}"
+    name: "{{ mongodb_admin_username }}"
+    password: "{{ mongodb_admin_password }}"
+    roles: "{{ mongodb_admin_roles }}"
+    state: present
+    mongo_cmd: "mongosh"
+  when: 
+    - mongodb_create_admin_user
+    - inventory_hostname == groups['mongodb'][0]
+  run_once: true
+  no_log: true
+  tags: users
+
+- name: Wait for user replication
+  pause:
+    seconds: 10
+  when: mongodb_create_admin_user
+  tags: wait
+
+- name: Verify replica set status with authentication
+  community.mongodb.mongodb_shell:
+    login_user: "{{ mongodb_admin_username }}"
+    login_password: "{{ mongodb_admin_password }}"
+    login_database: "{{ mongodb_admin_database }}"
+    eval: "rs.status()"
+    mongo_cmd: "mongosh"
+  register: final_rs_status
+  when: inventory_hostname == groups['mongodb'][0]
+  run_once: true
+  no_log: true
+  tags: verify
+
+- name: Display replica set information
+  debug:
+    msg: |
+      Replica Set Status:
+      - Replica Set Name: {{ mongodb_replica_set_name }}
+      - Members: {{ mongodb_replica_set_members | length }}
+      - Admin User: {{ mongodb_admin_username }}
+      - Authentication: {{ mongodb_enable_auth }}
+      - TLS/SSL: {{ mongodb_enable_ssl }}
+  when: inventory_hostname == groups['mongodb'][0]
+  run_once: true
+  tags: info
+
+- name: Create connection examples file
+  template:
+    src: connection_examples.txt.j2
+    dest: /root/mongodb_connection_examples.txt
+    mode: '0600'
+  when: inventory_hostname == groups['mongodb'][0]
+  run_once: true
+  tags: examples

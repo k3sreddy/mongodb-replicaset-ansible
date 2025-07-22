@@ -1,0 +1,19 @@
+---
+# Host specific variables for mongodb1 (Secondary node)
+
+# Node identification
+mongodb_node_id: 0
+mongodb_node_role: "secondary"
+mongodb_priority: 1
+mongodb_votes: 1
+
+# Host specific SSL configuration
+mongodb_ssl_hostname: "mongodb1"
+mongodb_ssl_ip: "172.16.90.163"
+
+# Host specific resource allocation
+mongodb_cache_size_gb: 1
+mongodb_oplog_size_mb: 1024
+
+# No backup on secondary nodes
+mongodb_backup_enabled: false

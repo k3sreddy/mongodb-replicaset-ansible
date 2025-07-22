@@ -1,0 +1,28 @@
+---
+# MongoDB Installation Playbook
+# Installs MongoDB on all target hosts
+
+- name: Install MongoDB
+  hosts: mongodb
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache
+      package:
+        update_cache: true
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+  roles:
+    - common
+    - mongodb-install
+
+  post_tasks:
+    - name: Verify MongoDB installation
+      command: mongod --version
+      register: mongodb_version_check
+      changed_when: false
+
+    - name: Display MongoDB version
+      debug:
+        var: mongodb_version_check.stdout_lines

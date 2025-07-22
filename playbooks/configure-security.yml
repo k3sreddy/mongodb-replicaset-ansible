@@ -1,0 +1,25 @@
+---
+# MongoDB Security Configuration Playbook
+# Configures TLS/SSL and authentication
+
+- name: Configure MongoDB Security
+  hosts: mongodb
+  become: true
+  gather_facts: true
+
+  roles:
+    - mongodb-security
+
+  post_tasks:
+    - name: Restart MongoDB service
+      systemd:
+        name: mongod
+        state: restarted
+        daemon_reload: true
+
+    - name: Wait for MongoDB to be ready
+      wait_for:
+        port: "{{ mongodb_port }}"
+        host: "{{ ansible_default_ipv4.address }}"
+        delay: 10
+        timeout: 60

@@ -1,0 +1,15 @@
+---
+# Default variables for MongoDB installation
+
+# MongoDB installation configuration
+mongodb_repo_filename: "mongodb-org-{{ mongodb_version }}"
+mongodb_service_name: "mongod"
+mongodb_config_template: "mongod.conf.j2"
+
+# MongoDB directories and files
+mongodb_keyfile_content: |
+  {{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}
+  {{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}
+  {{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}
+  {{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}
+  {{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}{{ 1000 | random | hash('sha1') }}

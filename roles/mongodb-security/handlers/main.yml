@@ -1,0 +1,9 @@
+---
+# MongoDB security handlers
+
+- name: restart mongod
+  systemd:
+    name: mongod
+    state: restarted
+    daemon_reload: true
+  listen: "restart mongod"

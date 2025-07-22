@@ -1,0 +1,33 @@
+---
+# MongoDB installation handlers
+
+- name: restart mongod
+  systemd:
+    name: mongod
+    state: restarted
+    daemon_reload: true
+  listen: "restart mongod"
+
+- name: start mongod
+  systemd:
+    name: mongod
+    state: started
+  listen: "start mongod"
+
+- name: stop mongod
+  systemd:
+    name: mongod
+    state: stopped
+  listen: "stop mongod"
+
+- name: reload mongod
+  systemd:
+    name: mongod
+    state: reloaded
+  listen: "reload mongod"
+
+- name: enable mongod
+  systemd:
+    name: mongod
+    enabled: true
+  listen: "enable mongod"

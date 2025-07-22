@@ -1,0 +1,14 @@
+---
+# Ansible Galaxy requirements file
+# Install with: ansible-galaxy install -r requirements.yml
+
+collections:
+  - name: community.mongodb
+    version: ">=1.7.0"
+  - name: community.general
+    version: ">=8.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"
+
+roles: []
+  # No external roles required for this deployment

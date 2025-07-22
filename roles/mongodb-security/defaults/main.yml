@@ -1,0 +1,28 @@
+---
+# Default variables for MongoDB security configuration
+
+# SSL Certificate configuration
+ssl_cert_config:
+  ca:
+    common_name: "MongoDB CA"
+    filename: "ca"
+  server:
+    common_name: "{{ inventory_hostname }}"
+    filename: "server"
+    san_dns:
+      - "{{ inventory_hostname }}"
+      - "localhost"
+    san_ip:
+      - "{{ ansible_default_ipv4.address }}"
+      - "127.0.0.1"
+  client:
+    common_name: "MongoDB Client"
+    filename: "client"
+
+# Certificate paths
+ca_key_file: "{{ mongodb_ssl_cert_dir }}/ca-key.pem"
+ca_cert_file: "{{ mongodb_ssl_cert_dir }}/ca.pem"
+server_key_file: "{{ mongodb_ssl_cert_dir }}/server-key.pem"
+server_cert_file: "{{ mongodb_ssl_cert_dir }}/server-cert.pem"
+client_key_file: "{{ mongodb_ssl_cert_dir }}/client-key.pem"
+client_cert_file: "{{ mongodb_ssl_cert_dir }}/client-cert.pem"

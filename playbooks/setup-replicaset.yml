@@ -1,0 +1,30 @@
+---
+# MongoDB Replica Set Configuration Playbook
+# Initializes and configures the replica set
+
+- name: Configure MongoDB Replica Set
+  hosts: mongodb
+  become: true
+  gather_facts: true
+
+  roles:
+    - mongodb-replicaset
+
+  post_tasks:
+    - name: Wait for replica set to stabilize
+      pause:
+        seconds: 30
+
+    - name: Verify replica set status (primary only)
+      community.mongodb.mongodb_shell:
+        login_user: "{{ mongodb_admin_username }}"
+        login_password: "{{ mongodb_admin_password }}"
+        login_database: "{{ mongodb_admin_database }}"
+        eval: "rs.status()"
+      register: rs_status
+      when: mongodb_role == "primary"
+
+    - name: Display replica set status
+      debug:
+        var: rs_status.transformed_output
+      when: mongodb_role == "primary" and rs_status is defined

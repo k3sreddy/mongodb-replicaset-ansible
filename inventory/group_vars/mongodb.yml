@@ -1,0 +1,73 @@
+---
+# MongoDB specific variables
+
+# MongoDB Version and Installation (Latest)
+mongodb_version: "8.0"
+mongodb_package: "mongodb-org"
+mongodb_repository_url: "https://repo.mongodb.org/yum/redhat/9/mongodb-org/8.0/x86_64/"
+mongodb_gpg_key: "https://pgp.mongodb.com/server-8.0.asc"
+
+# MongoDB Configuration
+mongodb_port: 27017
+mongodb_bind_ip: "0.0.0.0"
+mongodb_data_dir: "/var/lib/mongo"
+mongodb_log_dir: "/var/log/mongodb"
+mongodb_config_file: "/etc/mongod.conf"
+mongodb_pid_file: "/var/run/mongodb/mongod.pid"
+
+# MongoDB User and Group
+mongodb_user: "mongod"
+mongodb_group: "mongod"
+
+# Replica Set Configuration (172.16.90.164 as primary)
+mongodb_replica_set_name: "rs0"
+mongodb_replica_set_members:
+  - host: "172.16.90.163:27017"
+    priority: 1
+    votes: 1
+  - host: "172.16.90.164:27017"
+    priority: 2  # Higher priority for primary
+    votes: 1
+  - host: "172.16.90.165:27017"
+    priority: 1
+    votes: 1
+
+# Authentication Configuration
+mongodb_admin_username: "admin"
+mongodb_admin_password: "abcd123."
+mongodb_admin_database: "admin"
+mongodb_auth_mechanism: "SCRAM-SHA-256"
+
+# Security Configuration
+mongodb_enable_auth: true
+mongodb_enable_ssl: true
+mongodb_ssl_mode: "requireTLS"
+mongodb_keyfile_path: "/opt/mongodb/keyfile"
+mongodb_ssl_cert_dir: "/etc/ssl/mongodb"
+mongodb_ssl_ca_cert: "{{ mongodb_ssl_cert_dir }}/ca.pem"
+mongodb_ssl_server_cert: "{{ mongodb_ssl_cert_dir }}/server.pem"
+mongodb_ssl_client_cert: "{{ mongodb_ssl_cert_dir }}/client.pem"
+
+# Performance and Storage Configuration
+mongodb_storage_engine: "wiredTiger"
+mongodb_cache_size_gb: 1
+mongodb_oplog_size_mb: 1024
+mongodb_journal_enabled: true
+
+# Network and Connection Settings
+mongodb_max_connections: 1000
+mongodb_slow_op_threshold_ms: 100
+
+# Logging Configuration
+mongodb_log_level: "INFO"
+mongodb_log_append: true
+mongodb_log_rotation: "rename"
+
+# System Limits
+mongodb_system_limits:
+  - { domain: "{{ mongodb_user }}", limit_type: "soft", limit_item: "nproc", value: "65536" }
+  - { domain: "{{ mongodb_user }}", limit_type: "hard", limit_item: "nproc", value: "65536" }
+  - { domain: "{{ mongodb_user }}", limit_type: "soft", limit_item: "nofile", value: "65536" }
+  - { domain: "{{ mongodb_user }}", limit_type: "hard", limit_item: "nofile", value: "65536" }
+  - { domain: "{{ mongodb_user }}", limit_type: "soft", limit_item: "memlock", value: "unlimited" }
+  - { domain: "{{ mongodb_user }}", limit_type: "hard", limit_item: "memlock", value: "unlimited" }

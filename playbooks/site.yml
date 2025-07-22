@@ -1,0 +1,60 @@
+---
+# Main playbook for MongoDB Replica Set deployment
+# This playbook orchestrates the complete deployment process
+
+- name: MongoDB Replica Set Deployment
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Display deployment information
+      debug:
+        msg: |
+          Starting MongoDB Replica Set Deployment
+          Target Hosts: {{ groups['mongodb'] | join(', ') }}
+          MongoDB Version: {{ mongodb_version }}
+          Replica Set Name: {{ mongodb_replica_set_name }}
+          Security: TLS/SSL + Keyfile Authentication
+
+- name: Prepare all hosts
+  hosts: mongodb
+  become: true
+  gather_facts: true
+  roles:
+    - common
+
+- name: Install and configure MongoDB
+  hosts: mongodb
+  become: true
+  serial: 1  # Install one at a time to avoid conflicts
+  roles:
+    - mongodb-install
+
+- name: Configure MongoDB Security
+  hosts: mongodb
+  become: true
+  roles:
+    - mongodb-security
+
+- name: Initialize Replica Set
+  hosts: mongodb
+  become: true
+  roles:
+    - mongodb-replicaset
+
+- name: Post-deployment verification
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Display completion message
+      debug:
+        msg: |
+          MongoDB Replica Set deployment completed successfully!
+
+          Connection String:
+          mongodb://{{ mongodb_admin_username }}:{{ mongodb_admin_password }}@{{ groups['mongodb'] | map('extract', hostvars, 'ansible_host') | join(':' + mongodb_port|string + ',') }}:{{ mongodb_port }}/{{ mongodb_admin_database }}?replicaSet={{ mongodb_replica_set_name }}&authSource={{ mongodb_admin_database }}&tls=true&tlsCAFile={{ mongodb_ssl_ca_cert }}
+
+          Next Steps:
+          1. Verify replica set status: rs.status()
+          2. Create application users as needed
+          3. Configure monitoring and backups
+          4. Review security settings

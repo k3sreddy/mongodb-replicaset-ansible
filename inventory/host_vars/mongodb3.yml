@@ -1,0 +1,19 @@
+---
+# Host specific variables for mongodb3 (Secondary node)
+
+# Node identification
+mongodb_node_id: 2
+mongodb_node_role: "secondary"
+mongodb_priority: 1
+mongodb_votes: 1
+
+# Host specific SSL configuration
+mongodb_ssl_hostname: "mongodb3"
+mongodb_ssl_ip: "172.16.90.165"
+
+# Host specific resource allocation
+mongodb_cache_size_gb: 1
+mongodb_oplog_size_mb: 1024
+
+# No backup on secondary nodes
+mongodb_backup_enabled: false

@@ -1,0 +1,41 @@
+---
+# Global variables for all hosts
+
+# System Configuration
+system_timezone: "UTC"
+system_locale: "en_US.UTF-8"
+
+# Security Settings
+enable_firewall: true
+firewall_service: "firewalld"  # or "ufw" for Ubuntu/Debian
+
+# SSL/TLS Configuration
+ssl_cert_validity_days: 3650
+ssl_key_size: 4096
+ssl_country: "US"
+ssl_state: "State"
+ssl_city: "City"
+ssl_organization: "Organization"
+ssl_organizational_unit: "IT Department"
+
+# Network Configuration
+mongodb_network_interface: "0.0.0.0"  # Bind to all interfaces
+allowed_ips:
+  - "172.16.90.163/32"
+  - "172.16.90.164/32"
+  - "172.16.90.165/32"
+  - "127.0.0.1/32"
+
+# Backup Configuration
+backup_enabled: true
+backup_directory: "/var/backups/mongodb"
+backup_retention_days: 30
+
+# Monitoring
+monitoring_enabled: true
+log_level: "INFO"
+
+# Package Management
+package_state: "present"
+service_state: "started"
+service_enabled: true
